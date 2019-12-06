@@ -22,6 +22,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.alert import Alert
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import UnexpectedAlertPresentException
 import csv
 import pandas as pd
 
@@ -35,20 +36,21 @@ browser = webdriver.Firefox()
 # In[4]:
 
 
-start_roll_no = '16118001'
-expected_no_of_students = 85
+start_roll_no = '16118901'
+expected_no_of_students = 10
 
 # for 90(sliders) series
 #start_roll_no = '16118901'
 #expected_no_of_students = 10
 
-filename = 'IT_BTech_5th_Sem'
+filename = 'IT_BTech_7th_Sem'
 
 
 # In[5]:
 
 
-url_addr = "https://results.nitrr.ac.in/Default.aspx"
+# url_addr = "https://results.nitrr.ac.in/Default.aspx"
+url_addr = "https://results.nitrr.ac.in/"
 
 
 # In[6]:
@@ -67,49 +69,53 @@ for x in range(expected_no_of_students):
     roll_no_find.send_keys(roll_no)
     btnimgShow_find = browser.find_element_by_id("btnimgShow")
     btnimgShow_find.click()
-    
-    lblSName_find = browser.find_elements_by_id("lblSName")
-    
-    if len(lblSName_find)>0: #for handling student not available or result not published case
-        WebDriverWait(browser,8).until(EC.presence_of_element_located((By.ID,'ddlSemester')))
-        #the above wait for giving sufficient time to load the page for select drop-down menu
-        select_sem = Select(browser.find_element_by_id("ddlSemester"))
-        try:
-            select_sem.select_by_value('5') # for handling students not in 5th Sem (eg. Rollno 48)
-            show_result_find = browser.find_element_by_id("btnimgShowResult")
-            show_result_find.click()
-            WebDriverWait(browser,6).until(EC.presence_of_element_located((By.ID,"lblSPI")))
-            # the below cannot be done yet (page doesn't load fully and text is extracted
-            # resulting in duplicate texts)
-            #stu_name_find = browser.find_element_by_id("lblStudentName")
-            #stu_name = stu_name_find.text
-            spi_find = browser.find_element_by_id("lblSPI")
-            spi = spi_find.text
-            cpi_find = browser.find_element_by_id("lblCPI")
-            cpi = cpi_find.text
-
-            dict_stu_details={
-                'Roll_no':roll_no,
-                'SPI':spi,
-                'CPI':cpi
-                }
-
-            roll_no = str(int(roll_no)+1)
-            with open(filename,'a+', newline='') as csvfile:
-                fieldnames = ['Roll_no',
-                             'SPI',
-                             'CPI'
-                             ]
-                writer = csv.DictWriter(csvfile,fieldnames=fieldnames)
-                writer.writerow(dict_stu_details)
-        except NoSuchElementException:
-            roll_no = str(int(roll_no)+1)
-            pass
+    try:
+        lblSName_find = browser.find_elements_by_id("lblSName")
         
-    else:
+        if len(lblSName_find)>0: #for handling student not available or result not published case
+            WebDriverWait(browser,8).until(EC.presence_of_element_located((By.ID,'ddlSemester')))
+            #the above wait for giving sufficient time to load the page for select drop-down menu
+            select_sem = Select(browser.find_element_by_id("ddlSemester"))
+            try:
+                select_sem.select_by_value('7') # for handling students not in 5th Sem (eg. Rollno 48)
+                show_result_find = browser.find_element_by_id("btnimgShowResult")
+                show_result_find.click()
+                WebDriverWait(browser,6).until(EC.presence_of_element_located((By.ID,"lblSPI")))
+                # the below cannot be done yet (page doesn't load fully and text is extracted
+                # resulting in duplicate texts)
+                #stu_name_find = browser.find_element_by_id("lblStudentName")
+                #stu_name = stu_name_find.text
+                spi_find = browser.find_element_by_id("lblSPI")
+                spi = spi_find.text
+                cpi_find = browser.find_element_by_id("lblCPI")
+                cpi = cpi_find.text
+
+                dict_stu_details={
+                    'Roll_no':roll_no,
+                    'SPI':spi,
+                    'CPI':cpi
+                    }
+
+                roll_no = str(int(roll_no)+1)
+                with open(filename,'a+', newline='') as csvfile:
+                    fieldnames = ['Roll_no',
+                                'SPI',
+                                'CPI'
+                                ]
+                    writer = csv.DictWriter(csvfile,fieldnames=fieldnames)
+                    writer.writerow(dict_stu_details)
+            except NoSuchElementException:
+                roll_no = str(int(roll_no)+1)
+                pass
+            
+        else:
+            roll_no = str(int(roll_no)+1)
+            stu_not_found_alert_box = browser.switch_to_alert()
+            stu_not_found_alert_box.accept()
+    except UnexpectedAlertPresentException:
+        # Alert(browser).accept()
         roll_no = str(int(roll_no)+1)
-        stu_not_found_alert_box = browser.switch_to_alert()
-        stu_not_found_alert_box.accept()
+        pass
 
 
 # In[8]:
